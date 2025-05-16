@@ -1,54 +1,117 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
 
 // Middleware
-app.use(bodyParser.json());
-app.use(cors());
+app.use(express.json());
+app.use(cors({
+  origin: 'https://keen-gingersnap-1f3fe5.netlify.app',
+  credentials: true
+}));
 
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB error:', err));
 
-// Basic route
-app.get('/', (req, res) => {
-    res.send('AI-Solution Backend API');
-});
+// Admin model
+const Admin = mongoose.model('Admin', new mongoose.Schema({
+  username: { type: String, unique: true, required: true },
+  password: { type: String, required: true }
+}));
 
 // Routes
-const inquiryRoutes = require('./ai-solution-backend/routes/inquiryRoutes');
-const testimonialRoutes = require('./ai-solution-backend/routes/testimonialRoutes');
-
-app.use('/api/inquiries', inquiryRoutes);
-app.use('/api/testimonials', testimonialRoutes);
-
-
-// In server.js (temporary - remove after creating first admin)
-const Admin = require('./ai-solution-backend/models/admin');
-const bcrypt = require('bcryptjs');
-
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/admin/register', async (req, res) => {
+  try {
     const { username, password } = req.body;
-    
-    try {
-        const admin = new Admin({ username, password });
-        await admin.save();
-        res.status(201).json({ success: true, data: admin });
-    } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
-    }
+    const admin = new Admin({ username, password });
+    await admin.save();
+    res.status(201).json({ message: 'Admin created' });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
-// Set port
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username });
+    
+    if (!admin || admin.password !== password) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    res.json({ message: 'Login successful', admin });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
+
+const authenticate = (req, res, next) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Unauthorized' });
+  
+  // Verify token (you'll need to implement JWT verification)
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.admin = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
+
+// Contact Inquiries
+app.get('/api/admin/inquiries', authenticate, async (req, res) => {
+  try {
+    // Fetch from your database
+    const inquiries = await Inquiry.find().sort({ createdAt: -1 });
+    res.json(inquiries);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Blog Management
+app.get('/api/admin/blogs', authenticate, async (req, res) => {
+  // Get all blog posts
+});
+
+app.post('/api/admin/blogs', authenticate, async (req, res) => {
+  // Create new blog post
+});
+
+app.put('/api/admin/blogs/:id', authenticate, async (req, res) => {
+  // Update blog post
+});
+
+app.delete('/api/admin/blogs/:id', authenticate, async (req, res) => {
+  // Delete blog post
+});
+
+// Events Management
+app.get('/api/admin/events', authenticate, async (req, res) => {
+  // Get all events
+});
+
+app.post('/api/admin/events', authenticate, async (req, res) => {
+  // Create new event
+});
+
+// Services Management
+app.get('/api/admin/services', authenticate, async (req, res) => {
+  // Get all services
+});
+
+app.post('/api/admin/services', authenticate, async (req, res) => {
+  // Create new service
+});
+
+
+
+// Start server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
