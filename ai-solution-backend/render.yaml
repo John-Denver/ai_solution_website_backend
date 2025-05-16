@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ai-solution-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb://localhost:27017/ai-solution
+      - key: JWT_SECRET
+        value: your_jwt_secret
+      - key: PORT
+        value: 10000
