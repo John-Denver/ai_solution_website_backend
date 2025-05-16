@@ -12,16 +12,16 @@ app.use(cors({
   credentials: true
 }));
 
-// Database connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB error:', err));
 
-// Admin model
-const Admin = mongoose.model('Admin', new mongoose.Schema({
-  username: { type: String, unique: true, required: true },
-  password: { type: String, required: true }
-}));
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000
+})
+.then(() => console.log('Connected to MongoDB Atlas'))
+.catch(err => console.error('Atlas connection error:', err));
+
 
 // Routes
 app.post('/api/admin/register', async (req, res) => {
@@ -136,4 +136,26 @@ app.post('/api/admin/services', authenticate, async (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 5000;
+
+// Test Database Connection Route
+app.get('/api/test-db', async (req, res) => {
+  try {
+    // Test a simple database operation
+    const adminCount = await Admin.countDocuments();
+    
+    res.json({
+      status: 'Database connection successful',
+      adminCount: adminCount,
+      database: mongoose.connection.name,
+      host: mongoose.connection.host
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: 'Database connection failed',
+      error: err.message,
+      connectionString: process.env.MONGODB_URI // This helps verify what's being used
+    });
+  }
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
