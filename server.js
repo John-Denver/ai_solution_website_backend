@@ -112,25 +112,25 @@ app.post('/api/admin/services', authenticate, async (req, res) => {
 
 
 // List all routes
-function printRoutes() {
-  console.log("Available routes:");
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      // Routes registered directly on the app
-      console.log(`${Object.keys(middleware.route.methods).join(', ')} ${middleware.route.path}`);
-    } else if (middleware.name === 'router') {
-      // Routes registered as router modules
-      middleware.handle.stack.forEach((handler) => {
-        const route = handler.route;
-        if (route) {
-          console.log(`${Object.keys(route.methods).join(', ')} ${route.path}`);
-        }
-      });
-    }
-  });
-}
+// function printRoutes() {
+//   console.log("Available routes:");
+//   app._router.stack.forEach((middleware) => {
+//     if (middleware.route) {
+//       // Routes registered directly on the app
+//       console.log(`${Object.keys(middleware.route.methods).join(', ')} ${middleware.route.path}`);
+//     } else if (middleware.name === 'router') {
+//       // Routes registered as router modules
+//       middleware.handle.stack.forEach((handler) => {
+//         const route = handler.route;
+//         if (route) {
+//           console.log(`${Object.keys(route.methods).join(', ')} ${route.path}`);
+//         }
+//       });
+//     }
+//   });
+// }
 
-printRoutes();
+// printRoutes();
 
 
 
